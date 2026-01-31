@@ -50,6 +50,12 @@ function Header() {
               Explore Years
             </Link>
             <Link 
+              href="/personal"
+              className="text-sm font-medium text-retro-gray hover:text-retro-teal transition-colors"
+            >
+              Personal Capsule
+            </Link>
+            <Link 
               href="/compare" 
               className="text-sm font-medium text-retro-gray hover:text-retro-teal transition-colors"
             >
