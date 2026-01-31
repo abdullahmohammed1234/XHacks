@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { YearCard } from '@/components/features/year-card';
 import { years } from '@/data/seed';
 
-export default function YearsPage() {
+export default function personalPage() {
   return (
     <NostalgiaBackground showFloatingYears>
       <div className="min-h-screen py-12 px-4">
