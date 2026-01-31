@@ -2,6 +2,8 @@
 
 import { NostalgiaBackground } from '@/components/features/nostalgia-background';
 import { AnimatedSection } from '@/components/features/animated-section';
+import Link from "next/link";
+import { Button } from '@/components/ui/button';
 import { YearCard } from '@/components/features/year-card';
 import { years } from '@/data/seed';
 
@@ -21,7 +23,22 @@ export default function YearsPage() {
               </p>
             </div>
           </AnimatedSection>
-
+          {/*File Upload*/}
+          <AnimatedSection animation = "fadeUp">
+            <div className="text-center mb-12">
+              <Link href="//fileUpload">
+                <Button size="lg" className="text-lg px-8">
+                  Upload File
+                </Button>
+              </Link>
+            </div>
+          </AnimatedSection>
+          {/* Years Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {years.map((year, index) => (
+                <YearCard key={year.id} year={year} index={index} />
+              ))}
+            </div>
           
         </div>
       </div>
