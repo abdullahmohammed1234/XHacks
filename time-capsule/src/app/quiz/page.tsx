@@ -94,7 +94,7 @@ const memeResults: Record<string, QuizResult> = {
     title: 'Harambe',
     description: "You're a meme legend! Your sense of humor is absolutely unhinged in the best way possible. You could start a movement just by existing, and honestly? People would pay to see you do it. Legend status!",
     icon: '🦍',
-    color: 'bg-green-600',
+    color: 'bg-retro-purple',
   },
   'item-7': {
     id: 'cash-me-outside',
@@ -108,14 +108,14 @@ const memeResults: Record<string, QuizResult> = {
     title: 'Pokémon GO',
     description: "You're always on a mission! Whether it's catching 'em all or achieving your goals, you don't stop until you're done. You're adventurous, social, and you bring people together. Team rocket who?",
     icon: '⚡',
-    color: 'bg-yellow-500',
+    color: 'bg-retro-yellow',
   },
   'item-13': {
     id: 'airpods',
     title: 'AirPods',
     description: "You're ahead of the trends and you know it. You set the standard for what's cool and everyone else is just catching up. Your aesthetic is immaculate and your vibes are unmatched!",
     icon: '🎧',
-    color: 'bg-white',
+    color: 'bg-retro-teal',
   },
 };
 
@@ -174,9 +174,9 @@ export default function QuizPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
               >
-                <Card className="bg-white/90 backdrop-blur-sm shadow-xl">
+                <Card className="shadow-xl">
                   <CardHeader className="text-center">
-                    <Badge variant="secondary" className="w-fit mx-auto mb-4">
+                    <Badge variant="secondary" className="w-fit mx-auto mb-4 bg-retro-purple/20 text-retro-purple">
                       Question {currentQuestion + 1} of {quizQuestions.length}
                     </Badge>
                     <CardTitle className="text-2xl md:text-3xl font-bold text-retro-dark">
@@ -220,12 +220,13 @@ export default function QuizPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="text-center"
               >
-                <Card className="bg-white/90 backdrop-blur-sm shadow-xl overflow-hidden">
-                  <div className={`h-32 ${result?.color} flex items-center justify-center`}>
+                <Card className="shadow-xl overflow-hidden">
+                  <div className={`h-32 ${result?.color} flex items-center justify-center relative overflow-hidden`}>
+                    <div className="absolute inset-0 bg-gradient-to-r ${result?.color.replace('bg-', 'from-')}/30 to-transparent" />
                     <span className="text-6xl">{result?.icon}</span>
                   </div>
                   <CardContent className="p-8">
-                    <Badge variant="secondary" className="mb-4">
+                    <Badge variant="secondary" className="mb-4 bg-retro-teal/20 text-retro-teal">
                       Your 2016 Meme Persona
                     </Badge>
                     <h2 className="text-3xl md:text-4xl font-bold text-retro-dark mb-4">
@@ -238,11 +239,11 @@ export default function QuizPage() {
                     <div className="flex gap-4 justify-center">
                       <Button
                         onClick={shareResult}
-                        className="bg-[#1DA1F2] hover:bg-[#1a91da] text-white"
+                        className="bg-gradient-to-r from-[#FF6B9D] to-[#C44FFF] hover:opacity-90 text-white border-0"
                       >
                         Share Result 🐦
                       </Button>
-                      <Button variant="outline" onClick={resetQuiz}>
+                      <Button variant="outline" onClick={resetQuiz} className="border-retro-purple text-retro-purple hover:bg-retro-purple/10">
                         Take Quiz Again 🔄
                       </Button>
                     </div>
