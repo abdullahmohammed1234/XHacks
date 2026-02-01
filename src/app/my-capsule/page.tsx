@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NostalgiaBackground } from '@/components/features/nostalgia-background';
 import { PersonalizedWrapped } from '@/components/features/personalized-wrapped';
@@ -12,6 +12,7 @@ import { years, categories } from '@/data/seed';
 import { cn } from '@/lib/utils';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/components/providers';
+import { formatFileSize } from '@/lib/firebase/storage';
 import { 
   collection, 
   doc, 
@@ -55,7 +56,8 @@ interface Capsule {
   sealedAt?: string;
   unlockDate?: string;
   submissions: CapsuleSubmission[];
-  coverImage?: string;
+  coverImage?: string | null;
+  coverImageToken?: string | null;
   isFavorite?: boolean;
   shareCode?: string;
 }
@@ -102,6 +104,18 @@ const Save = ({ className }: { className?: string }) => (
   </svg>
 );
 
+const UploadIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>
+);
+
+const ImageIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>
+);
+
 export default function MyCapsulePage() {
   const { user, loading: authLoading } = useAuth();
   const [capsules, setCapsules] = useState<Capsule[]>([]);
@@ -112,6 +126,13 @@ export default function MyCapsulePage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'capsules' | 'gallery' | 'friends' | 'wrapped'>('capsules');
   const [pageLoading, setPageLoading] = useState(true);
+  
+  // Image upload state
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form states
   const [createForm, setCreateForm] = useState({
@@ -119,6 +140,7 @@ export default function MyCapsulePage() {
     title: '',
     description: '',
     coverImage: '',
+    coverImageToken: '',
     visibility: 'public' as 'public' | 'friends' | 'private'
   });
 
@@ -344,10 +366,112 @@ export default function MyCapsulePage() {
     return options.slice(0, 50);
   };
 
+  // Image upload handlers
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+    
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image size must be less than 10MB');
+      return;
+    }
+    
+    setSelectedImageFile(file);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setImagePreview(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadImage = async () => {
+    if (!selectedImageFile) return;
+    
+    setUploadingImage(true);
+    setUploadProgress(0);
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedImageFile);
+      
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+      
+      const result = await response.json();
+      
+      // Store the token and URL
+      setCreateForm(prev => ({ 
+        ...prev, 
+        coverImage: result.url,
+        coverImageToken: result.token 
+      }));
+      setUploadingImage(false);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image. Please try again or enter a URL manually.');
+      setUploadingImage(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImageFile(null);
+    setImagePreview(null);
+    setCreateForm(prev => ({ ...prev, coverImage: '', coverImageToken: '' }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleCreateCapsule = async () => {
     if (!user) {
       alert('Please log in to create a capsule');
       return;
+    }
+    
+    // If there's a selected file that hasn't been uploaded yet, upload it first
+    let coverImageUrl = createForm.coverImage;
+    let coverImageToken = createForm.coverImageToken;
+    if (selectedImageFile && !uploadingImage && !coverImageUrl) {
+      setUploadingImage(true);
+      setUploadProgress(0);
+      try {
+        const formData = new FormData();
+        formData.append('file', selectedImageFile);
+        
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!response.ok) {
+          throw new Error('Upload failed');
+        }
+        
+        const result = await response.json();
+        coverImageUrl = result.url;
+        coverImageToken = result.token;
+        setUploadingImage(false);
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        alert('Failed to upload image. Please try again or enter a URL manually.');
+        setUploadingImage(false);
+        return;
+      }
     }
     
     const capsuleData = {
@@ -355,7 +479,8 @@ export default function MyCapsulePage() {
       year: createForm.year,
       title: createForm.title || `My ${createForm.year} Time Capsule`,
       description: createForm.description || 'Start building your capsule!',
-      coverImage: createForm.coverImage || null,
+      coverImage: coverImageUrl || null,
+      coverImageToken: coverImageToken || null,
       status: 'open',
       visibility: createForm.visibility,
       submissions: [],
@@ -375,7 +500,8 @@ export default function MyCapsulePage() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         status: 'open' as const,
-        coverImage: createForm.coverImage || undefined
+        coverImage: coverImageUrl || undefined,
+        coverImageToken: coverImageToken || undefined
       };
       
       setCapsules(prev => [newCapsule, ...prev]);
@@ -385,8 +511,15 @@ export default function MyCapsulePage() {
         title: '',
         description: '',
         coverImage: '',
+        coverImageToken: '',
         visibility: 'public'
       });
+      // Reset image upload state
+      setSelectedImageFile(null);
+      setImagePreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } catch (error) {
       console.error('Error creating capsule:', error);
       alert('Failed to create capsule. Please try again.');
@@ -720,35 +853,35 @@ export default function MyCapsulePage() {
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.9, opacity: 0 }}
-                  className="bg-gray-900 rounded-2xl p-6 max-w-md w-full border border-white/20"
+                  className="bg-gray-900 rounded-2xl p-6 max-w-lg w-full border border-white/20 shadow-xl max-h-[90vh] overflow-y-auto"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-white">📦 Create New Capsule</h2>
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-bold text-white">📦 Create New Capsule</h2>
                     <Button variant="ghost" onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-white">
-                      <X className="w-6 h-6" />
+                      <X className="w-5 h-5" />
                     </Button>
                   </div>
                   
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium mb-2 text-gray-300">Year</label>
+                      <label className="block text-sm font-medium mb-1 text-gray-300">Year</label>
                       <select 
-                        className="w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white"
+                        className="w-full p-2 rounded-lg bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                         value={createForm.year}
                         onChange={(e) => setCreateForm(prev => ({ ...prev, year: parseInt(e.target.value) }))}
                       >
                         {years.filter(y => y.year <= CURRENT_YEAR + 1).map(y => (
-                          <option key={y.id} value={y.year} className="bg-gray-900">{y.year}</option>
+                          <option key={y.id} value={y.year}>{y.year}</option>
                         ))}
                       </select>
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium mb-2 text-gray-300">Title</label>
+                      <label className="block text-sm font-medium mb-1 text-gray-300">Title</label>
                       <input 
                         type="text"
-                        className="w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-500"
+                        className="w-full p-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                         placeholder={`My ${createForm.year} Time Capsule`}
                         value={createForm.title}
                         onChange={(e) => setCreateForm(prev => ({ ...prev, title: e.target.value }))}
@@ -756,45 +889,106 @@ export default function MyCapsulePage() {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium mb-2 text-gray-300">Description</label>
+                      <label className="block text-sm font-medium mb-1 text-gray-300">Description</label>
                       <textarea 
-                        className="w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-500 resize-none"
+                        className="w-full p-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-400 resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                         placeholder="Describe your capsule..."
-                        rows={3}
+                        rows={2}
                         value={createForm.description}
                         onChange={(e) => setCreateForm(prev => ({ ...prev, description: e.target.value }))}
                       />
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium mb-2 text-gray-300">
-                        Cover Image URL <span className="text-gray-500">(optional)</span>
+                      <label className="block text-sm font-medium mb-1 text-gray-300">
+                        Cover Image <span className="text-gray-500">(optional)</span>
                       </label>
-                      <input 
-                        type="text"
-                        className="w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-500"
-                        placeholder="https://example.com/image.jpg"
-                        value={createForm.coverImage}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, coverImage: e.target.value }))}
+                      
+                      {/* Hidden file input */}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="hidden"
                       />
+                      
+                      {/* Image preview or upload area */}
+                      {imagePreview ? (
+                        <div className="relative rounded-lg overflow-hidden border border-gray-200">
+                          <img 
+                            src={imagePreview} 
+                            alt="Cover preview" 
+                            className="w-full h-32 object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={handleRemoveImage}
+                              className="bg-red-500 text-white hover:bg-red-600"
+                            >
+                              🗑️ Remove
+                            </Button>
+                          </div>
+                          {uploadingImage && (
+                            <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center">
+                              <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                              <p className="text-gray-700 text-sm">Uploading... {uploadProgress.toFixed(0)}%</p>
+                              <div className="w-32 h-2 bg-gray-200 rounded-full mt-2 overflow-hidden">
+                                <div 
+                                  className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                                  style={{ width: `${uploadProgress}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div 
+                          className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-purple-500 hover:bg-gray-50 transition-all"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <UploadIcon className="w-8 h-8 mx-auto text-gray-400 mb-1" />
+                          <p className="text-gray-600 text-sm">Click to upload</p>
+                          <p className="text-gray-400 text-xs">PNG, JPG up to 5MB</p>
+                        </div>
+                      )}
+                      
+                      {/* URL input as alternative */}
+                      <div className="mt-2">
+                        <p className="text-xs text-gray-500 mb-1">Or enter a URL:</p>
+                        <input 
+                          type="text"
+                          className="w-full p-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-500 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          placeholder="https://example.com/image.jpg"
+                          value={createForm.coverImage}
+                          onChange={(e) => {
+                            setCreateForm(prev => ({ ...prev, coverImage: e.target.value, coverImageToken: '' }));
+                            setSelectedImageFile(null);
+                            setImagePreview(null);
+                          }}
+                        />
+                      </div>
                       <p className="text-xs text-gray-500 mt-1">Leave empty for default cover</p>
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium mb-2 text-gray-300">Privacy</label>
+                      <label className="block text-sm font-medium mb-1 text-gray-300">Privacy</label>
                       <div className="flex gap-2">
                         {(['public', 'friends', 'private'] as const).map((vis) => (
                           <Button
                             key={vis}
                             variant={createForm.visibility === vis ? 'default' : 'outline'}
                             onClick={() => setCreateForm(prev => ({ ...prev, visibility: vis }))}
+                            size="sm"
                             className={createForm.visibility === vis 
                               ? 'bg-purple-500 text-white' 
                               : 'border-white/30 text-white hover:bg-white/10'}
                           >
-                            {vis === 'public' && <Globe className="w-4 h-4 mr-1" />}
-                            {vis === 'friends' && <Users className="w-4 h-4 mr-1" />}
-                            {vis === 'private' && <Lock className="w-4 h-4 mr-1" />}
+                            {vis === 'public' && <Globe className="w-3 h-3 mr-1" />}
+                            {vis === 'friends' && <Users className="w-3 h-3 mr-1" />}
+                            {vis === 'private' && <Lock className="w-3 h-3 mr-1" />}
                             {vis.charAt(0).toUpperCase() + vis.slice(1)}
                           </Button>
                         ))}
@@ -802,7 +996,7 @@ export default function MyCapsulePage() {
                     </div>
                   </div>
                   
-                  <div className="flex gap-2 mt-6">
+                  <div className="flex gap-2 mt-4">
                     <Button 
                       variant="outline" 
                       onClick={() => setShowCreateModal(false)}
@@ -812,7 +1006,8 @@ export default function MyCapsulePage() {
                     </Button>
                     <Button 
                       onClick={handleCreateCapsule}
-                      className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+                      className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={uploadingImage}
                     >
                       <Plus className="w-4 h-4 mr-1" />
                       Create
