@@ -24,6 +24,7 @@ const gradientColors: Record<string, { from: string; to: string; accent: string 
   '2023': { from: '#FF6B9D', to: '#FF9F4F', accent: '#4F8FFF' },
   '2024': { from: '#C44FFF', to: '#FF6B9D', accent: '#4FFFC4' },
   '2025': { from: '#4FFFC4', to: '#4F8FFF', accent: '#FF6B9D' },
+  '2026': { from: '#4F8FFF', to: '#C44FFF', accent: '#FFE14F' },
 };
 
 export function CassetteYearCard({ year, index }: CassetteYearCardProps) {

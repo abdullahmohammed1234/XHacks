@@ -76,29 +76,36 @@ export const years: Year[] = [
     id: '2022',
     year: 2022,
     description: 'Elon buys Twitter, ChatGPT launches, and Wednesday dance goes viral.',
-    theme: 'ai',
+    theme: 'revolution',
     topTrends: ['Wednesday', 'ChatGPT', 'Corn Kid', 'Goblin Mode']
   },
   {
     id: '2023',
     year: 2023,
-    description: 'AI art explosion, Barbenheimer summer, and the rise of Threads.',
-    theme: 'barbie',
+    description: 'Barbenheimer summer takes over, Threads launches, and digital creativity explodes.',
+    theme: 'creativity',
     topTrends: ['Barbie', 'Oppenheimer', 'AI Art', 'Threads']
   },
   {
     id: '2024',
     year: 2024,
-    description: 'The year of AI assistants, viral TikTok sounds, and nostalgic comebacks.',
-    theme: 'nostalgia',
-    topTrends: ['AI Assistants', 'Brat Summer', 'Demure', 'Very Mindful']
+    description: 'Viral trends dominate social media, nostalgic comebacks, and new internet moments.',
+    theme: 'viral',
+    topTrends: ['Brat Summer', 'Demure', 'Very Mindful', 'Digital Culture']
   },
   {
     id: '2025',
     year: 2025,
-    description: 'Current year - still unfolding! What trends will define this year?',
-    theme: 'current',
-    topTrends: ['TBD', 'Emerging', 'New Trends', 'Watch This Space']
+    description: 'Last year - the trends and moments that shaped digital culture.',
+    theme: 'past',
+    topTrends: ['Digital Culture', 'Viral Moments', 'Streaming', 'Social Media']
+  },
+  {
+    id: '2026',
+    year: 2026,
+    description: 'A year of viral moments and digital culture continuing to shape how we connect and share.',
+    theme: 'mainstream',
+    topTrends: ['Digital Culture', 'Viral Moments', 'Streaming', 'Social Media']
   }
 ];
 
@@ -114,7 +121,9 @@ export const months: Month[] = [
   { id: 'sep-2016', name: 'September', yearId: '2016', shortName: 'Sep' },
   { id: 'oct-2016', name: 'October', yearId: '2016', shortName: 'Oct' },
   { id: 'nov-2016', name: 'November', yearId: '2016', shortName: 'Nov' },
-  { id: 'dec-2016', name: 'December', yearId: '2016', shortName: 'Dec' }
+  { id: 'dec-2016', name: 'December', yearId: '2016', shortName: 'Dec' },
+  { id: 'jan-2026', name: 'January', yearId: '2026', shortName: 'Jan' },
+  { id: 'feb-2026', name: 'February', yearId: '2026', shortName: 'Feb' }
 ];
 
 export const categories: Category[] = [
@@ -732,6 +741,79 @@ export const items: Item[] = [
     userVotes: 14000,
     slug: 'zootopia',
     rank: 5
+  },
+
+  // ===== MUSIC 2026 =====
+  {
+    id: 'music-2026-1',
+    title: 'Top Song 2026',
+    description: 'The defining hit of 2026 that dominated streaming platforms.',
+    categoryId: 'music',
+    monthId: 'jan-2026',
+    yearId: '2026',
+    popularityScore: 95,
+    engagementScore: 94,
+    userVotes: 12000,
+    slug: 'top-song-2026',
+    rank: 1
+  },
+  {
+    id: 'music-2026-2',
+    title: 'Viral Breakout Hit',
+    description: 'The song that took TikTok by storm this year.',
+    categoryId: 'music',
+    monthId: 'feb-2026',
+    yearId: '2026',
+    popularityScore: 92,
+    engagementScore: 91,
+    userVotes: 10000,
+    slug: 'viral-breakout-2026',
+    rank: 2
+  },
+
+  // ===== MEMES 2026 =====
+  {
+    id: 'meme-2026-1',
+    title: 'Viral Meme 2026',
+    description: 'The meme that defined internet culture this year.',
+    categoryId: 'memes',
+    monthId: 'jan-2026',
+    yearId: '2026',
+    popularityScore: 98,
+    engagementScore: 97,
+    userVotes: 20000,
+    slug: 'viral-meme-2026',
+    rank: 1
+  },
+
+  // ===== TRENDS 2026 =====
+  {
+    id: 'trend-2026-1',
+    title: 'Digital Culture Moment',
+    description: 'The trend that captured the internet\'s attention.',
+    categoryId: 'trends',
+    monthId: 'jan-2026',
+    yearId: '2026',
+    popularityScore: 96,
+    engagementScore: 95,
+    userVotes: 15000,
+    slug: 'digital-culture-2026',
+    rank: 1
+  },
+
+  // ===== TV SHOWS 2026 =====
+  {
+    id: 'tv-2026-1',
+    title: 'Hit Series 2026',
+    description: 'The show that everyone was talking about this year.',
+    categoryId: 'tv',
+    monthId: 'jan-2026',
+    yearId: '2026',
+    popularityScore: 94,
+    engagementScore: 93,
+    userVotes: 18000,
+    slug: 'hit-series-2026',
+    rank: 1
   }
 ];
 

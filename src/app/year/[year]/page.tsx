@@ -311,7 +311,7 @@ export default function YearPage() {
                 All Years
               </Button>
             </Link>
-            {year < 2025 && (
+            {year < 2026 && (
               <Link href={`/year/${year + 1}`}>
                 <Button variant="ghost" className="text-gray-400 hover:text-white">
                   {year + 1} →
