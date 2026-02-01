@@ -147,12 +147,12 @@ export default function LoginPage() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md z-10"
       >
-        <Card className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-2xl">
+        <Card className="bg-gray-900/95 backdrop-blur-sm shadow-2xl">
           <CardHeader className="text-center">
             <CardTitle className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               Welcome Back
             </CardTitle>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
+            <p className="text-gray-400 mt-2">
               Sign in to access your time capsules
             </p>
           </CardHeader>
@@ -164,7 +164,7 @@ export default function LoginPage() {
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
-                  className="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm"
+                  className="p-3 rounded-lg bg-red-900/30 text-red-400 text-sm"
                 >
                   {signInError || googleError || errors.general}
                 </motion.div>
@@ -172,7 +172,7 @@ export default function LoginPage() {
 
               {/* Email */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
                   Email Address
                 </label>
                 <Input
@@ -192,7 +192,7 @@ export default function LoginPage() {
 
               {/* Password */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
                   Password
                 </label>
                 <div className="relative">
@@ -249,10 +249,10 @@ export default function LoginPage() {
               {/* Divider */}
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
+                  <div className="w-full border-t border-gray-700"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white dark:bg-gray-900 text-gray-500">Or continue with</span>
+                  <span className="px-2 bg-gray-900 text-gray-500">Or continue with</span>
                 </div>
               </div>
 
@@ -286,7 +286,7 @@ export default function LoginPage() {
               </Button>
 
               {/* Sign Up Link */}
-              <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
+              <p className="text-center text-sm text-gray-400 mt-6">
                 Don't have an account?{' '}
                 <Link
                   href="/auth/signup"
@@ -311,7 +311,7 @@ export default function LoginPage() {
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full"
+            className="bg-gray-800 rounded-lg p-6 max-w-md w-full"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-xl font-bold mb-4">Reset Password</h3>
@@ -319,19 +319,19 @@ export default function LoginPage() {
             {resetSuccess ? (
               <div className="text-center">
                 <div className="text-green-500 text-5xl mb-4">✓</div>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                <p className="text-gray-400 mb-4">
                   Password reset email sent! Check your inbox for further instructions.
                 </p>
                 <Button onClick={() => setShowResetModal(false)}>Close</Button>
               </div>
             ) : (
               <>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                <p className="text-gray-400 mb-4">
                   Enter your email address and we'll send you a link to reset your password.
                 </p>
                 
                 {(resetError || errors.general) && (
-                  <div className="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm mb-4">
+                  <div className="p-3 rounded-lg bg-red-900/30 text-red-400 text-sm mb-4">
                     {resetError || errors.general}
                   </div>
                 )}
