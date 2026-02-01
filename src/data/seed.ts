@@ -382,7 +382,7 @@ export const items: Item[] = [
   {
     id: 'meme-1',
     title: 'Harambe',
-    description: 'After a gorilla was shot at Cincinnati Zoo, the internet mourned with endless memes. "Dicks out for Harambe" became a cultural phenomenon.',
+    description: 'After a gorilla was shot at Cincinnati Zoo, the internet mourned with endless memes. Justice for Harambe!',
     categoryId: 'memes',
     monthId: 'may-2016',
     yearId: '2016',
