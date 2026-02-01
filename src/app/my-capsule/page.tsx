@@ -154,6 +154,13 @@ export default function MyCapsulePage() {
   const [sealDate, setSealDate] = useState('');
   const [sealWarning, setSealWarning] = useState(false);
 
+  // Cover image upload state
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Submission form state
   const [submissionForm, setSubmissionForm] = useState({
     title: '',
@@ -276,8 +283,10 @@ export default function MyCapsulePage() {
   const handleAddSubmission = async () => {
     if (!selectedCapsule) return;
     
+    let contentUrl = submissionForm.content;
+    
     // Check if we need to upload a file first
-    if (submissionFile && !submissionForm.content) {
+    if (submissionFile && !contentUrl) {
       setUploadingSubmissionFile(true);
       try {
         const formData = new FormData();
@@ -294,7 +303,7 @@ export default function MyCapsulePage() {
         }
         
         const result = await response.json();
-        setSubmissionForm(prev => ({ ...prev, content: result.url }));
+        contentUrl = result.url;
       } catch (error) {
         console.error('Error uploading file:', error);
         alert('Failed to upload file. Please try again.');
@@ -304,14 +313,14 @@ export default function MyCapsulePage() {
       setUploadingSubmissionFile(false);
     }
     
-    // Now create the submission
+    // Now create the submission with the content URL
     const newSubmission = {
       id: `sub-${Date.now()}`,
       capsuleId: selectedCapsule.id,
       userId: 'user-1',
       type: submissionForm.type,
       title: submissionForm.title || `New ${submissionForm.type}`,
-      content: submissionForm.content || (submissionForm.type === 'text' ? 'Sample content' : ''),
+      content: contentUrl || (submissionForm.type === 'text' ? 'Sample content' : ''),
       category: submissionForm.category,
       month: submissionForm.month,
       tags: [],
@@ -360,6 +369,38 @@ export default function MyCapsulePage() {
 
   const handleDeleteCapsule = async (capsuleId: string) => {
     try {
+      // Get the capsule to access its submissions and cover image
+      const capsule = capsules.find(c => c.id === capsuleId);
+      
+      // Delete all associated files from submissions
+      if (capsule?.submissions) {
+        for (const submission of capsule.submissions) {
+          if (submission.content && (submission.type === 'image' || submission.type === 'video')) {
+            // Extract token from URL (format: /uploads/{token})
+            const token = submission.content.split('/uploads/')[1];
+            if (token) {
+              try {
+                await fetch(`/api/upload?token=${encodeURIComponent(token)}`, { method: 'DELETE' });
+              } catch (e) {
+                console.warn('Failed to delete file:', token);
+              }
+            }
+          }
+        }
+      }
+      
+      // Delete cover image if present
+      if (capsule?.coverImage) {
+        const token = capsule.coverImage.split('/uploads/')[1];
+        if (token) {
+          try {
+            await fetch(`/api/upload?token=${encodeURIComponent(token)}`, { method: 'DELETE' });
+          } catch (e) {
+            console.warn('Failed to delete cover image:', token);
+          }
+        }
+      }
+      
       // Delete from Firebase
       await deleteDoc(doc(db, 'capsules', capsuleId));
       

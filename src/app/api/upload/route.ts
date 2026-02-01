@@ -1,4 +1,4 @@
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join } from 'path';
 import { NextRequest, NextResponse } from 'next/server';
 import { existsSync } from 'fs';
@@ -57,5 +57,29 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const token = searchParams.get('token');
+
+    if (!token) {
+      return NextResponse.json({ error: 'No token provided' }, { status: 400 });
+    }
+
+    const uploadsDir = join(process.cwd(), 'public', 'uploads');
+    const filepath = join(uploadsDir, token);
+
+    if (existsSync(filepath)) {
+      await unlink(filepath);
+      return NextResponse.json({ success: true });
+    } else {
+      return NextResponse.json({ error: 'File not found' }, { status: 404 });
+    }
+  } catch (error) {
+    console.error('Delete error:', error);
+    return NextResponse.json({ error: 'Failed to delete file' }, { status: 500 });
   }
 }
