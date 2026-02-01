@@ -4,7 +4,10 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { AnimatedSection } from '@/components/features/animated-section';
 import { CassetteYearCard } from '@/components/features/cassette-year-card';
+import { OnThisDay } from '@/components/features/on-this-day';
+import { RandomTrendButton } from '@/components/features/random-trend-button';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { years } from '@/data/seed';
 import Footer from '@/components/footer';
 
@@ -62,10 +65,40 @@ export default function YearsPage() {
                   Capsules
                 </span>
               </h1>
-              <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+              <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-6">
                 Journey through the evolution of internet culture, one cassette at a time.
                 Each tape holds the memories of a year.
               </p>
+              
+              {/* Quick Access Features */}
+              <div className="flex flex-wrap justify-center gap-4">
+                <Link href="/decade">
+                  <Button variant="outline" className="border-retro-teal/50 text-retro-teal hover:bg-retro-teal/20">
+                    🕐 Decade View
+                  </Button>
+                </Link>
+                <Link href="/all-time">
+                  <Button variant="outline" className="border-[#FFE14F]/50 text-[#FFE14F] hover:bg-[#FFE14F]/10">
+                    🏆 All-Time Legends
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </AnimatedSection>
+
+          {/* On This Day & Random Trend */}
+          <AnimatedSection animation="fadeUp" delay={0.2}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
+              <OnThisDay compact={true} />
+              <Card className="bg-gradient-to-br from-retro-purple/20 to-retro-teal/20 border-white/10">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xl">🎲</span>
+                    <h3 className="font-bold text-white">Random Discovery</h3>
+                  </div>
+                  <RandomTrendButton variant="secondary" size="sm" showResult={true} />
+                </CardContent>
+              </Card>
             </div>
           </AnimatedSection>
 
