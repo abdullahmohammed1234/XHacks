@@ -686,6 +686,18 @@ export default function MyCapsulePage() {
                               >
                                 ✏️ Edit
                               </Button>
+                              
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className ="flex-1 bg-red-500/20 border-red-500/50 text-red-400 hover:bg-red-500/30"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteCapsule(capsule.id);
+                                }}
+                              >
+                                🗑️ Delete
+                              </Button>
                               <Button 
                                 size="sm" 
                                 variant="outline"
