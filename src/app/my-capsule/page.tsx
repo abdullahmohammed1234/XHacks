@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NostalgiaBackground } from '@/components/features/nostalgia-background';
 import { PersonalizedWrapped } from '@/components/features/personalized-wrapped';
@@ -8,39 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { years, categories } from '@/data/seed';
-import { PersonalCapsuleEntry } from '@/types';
+import { PersonalCapsule, CapsuleSubmission, CapsuleStatus } from '@/types';
 import { cn } from '@/lib/utils';
-import { X, Globe, Lock, Users, Edit2, Trash2, Plus, Image, Save, ArrowLeft } from 'lucide-react';
-
-// Extended capsule type with additional properties for the UI
-interface ExtendedCapsule {
-  id: string;
-  userId: string;
-  yearId: string;
-  year: number;
-  title: string;
-  description?: string;
-  coverImage?: string;
-  status: 'open' | 'sealed' | 'unlocked';
-  visibility: 'public' | 'friends' | 'private';
-  shareCode?: string;
-  isFavorite?: boolean;
-  unlockDate?: string;
-  sealedAt?: string;
-  submissions: PersonalCapsuleEntry[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Get current year for date constraints
-const CURRENT_YEAR = new Date().getFullYear();
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-
-// Helper to get days in a month
-const getDaysInMonth = (month: string, year: number): number => {
-  const monthIndex = MONTHS.indexOf(month);
-  return new Date(year, monthIndex + 1, 0).getDate();
-};
 
 // Mock data for demo
 const mockUser = {
@@ -56,39 +25,13 @@ const mockUser = {
   isPrivate: false
 };
 
-const mockCapsules: ExtendedCapsule[] = [
-  {
-    id: 'capsule-2026',
-    userId: 'user-1',
-    yearId: '2026',
-    year: 2026,
-    title: 'My 2026 Time Capsule',
-    description: 'Building my capsule for this year',
-    status: 'open',
-    visibility: 'public',
-    createdAt: '2026-01-01',
-    updatedAt: '2026-01-15',
-    submissions: [
-      {
-        id: 'sub-2026-1',
-        userId: 'user-1',
-        yearId: '2026',
-        categoryId: 'trends',
-        title: 'Viral Dance Challenge',
-        description: 'Participated in the biggest dance challenge of the year!',
-        mediaType: 'text',
-        createdAt: '2026-02-14',
-        isPublic: true
-      }
-    ]
-  },
+const mockCapsules: PersonalCapsule[] = [
   {
     id: 'capsule-2024',
     userId: 'user-1',
-    yearId: '2024',
     year: 2024,
     title: 'My 2024 Rewind',
-    description: 'A year of new beginnings and memorable moments',
+    description: 'A year of AI, elections, and new beginnings',
     status: 'open',
     visibility: 'public',
     createdAt: '2024-01-01',
@@ -96,63 +39,45 @@ const mockCapsules: ExtendedCapsule[] = [
     submissions: [
       {
         id: 'sub-1',
+        capsuleId: 'capsule-2024',
         userId: 'user-1',
-        yearId: '2024',
-        categoryId: 'style',
+        type: 'image',
         title: 'Summer Vacation Photo',
-        description: 'Beach day during summer break!',
-        mediaUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400',
-        mediaType: 'image',
+        content: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400',
+        category: 'style',
+        month: 'July',
+        tags: ['travel', 'summer', 'memories'],
+        likes: 12,
+        comments: 3,
         createdAt: '2024-07-15',
-        isPublic: true
+        isPinned: true
       },
       {
         id: 'sub-2',
+        capsuleId: 'capsule-2024',
         userId: 'user-1',
-        yearId: '2024',
-        categoryId: 'music',
+        type: 'text',
         title: 'Favorite Song of the Year',
-        description: 'Espresso by Sabrina Carpenter - this song defined my summer!',
-        mediaType: 'text',
+        content: 'Espresso by Sabrina Carpenter - this song defined my summer!',
+        category: 'music',
+        month: 'August',
+        tags: ['music', 'favorite', 'summer'],
+        likes: 8,
+        comments: 2,
         createdAt: '2024-08-20',
-        isPublic: true
-      },
-      {
-        id: 'sub-3',
-        userId: 'user-1',
-        yearId: '2024',
-        categoryId: 'trends',
-        title: 'Cool article I found',
-        description: 'Check out this amazing article about digital culture',
-        mediaUrl: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=400',
-        mediaType: 'text',
-        createdAt: '2024-09-10',
-        isPublic: true
-      },
-      {
-        id: 'sub-4',
-        userId: 'user-1',
-        yearId: '2024',
-        categoryId: 'tv',
-        title: 'Concert Footage',
-        description: 'Amazing night at the concert!',
-        mediaUrl: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400',
-        mediaType: 'video',
-        createdAt: '2024-10-05',
-        isPublic: true
+        isPinned: false
       }
     ],
-    shareCode: 'CAP-2024-XYZ',
+    coverImage: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800',
     isFavorite: true,
-    coverImage: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800'
+    shareCode: 'CAP-2024-XYZ'
   },
   {
     id: 'capsule-2023',
     userId: 'user-1',
-    yearId: '2023',
     year: 2023,
     title: 'My 2023 Time Capsule',
-    description: 'The year of Barbenheimer and new experiences',
+    description: 'The year of Barbenheimer and AI',
     status: 'sealed',
     visibility: 'friends',
     createdAt: '2023-01-01',
@@ -162,203 +87,115 @@ const mockCapsules: ExtendedCapsule[] = [
     submissions: [
       {
         id: 'sub-3',
+        capsuleId: 'capsule-2023',
         userId: 'user-1',
-        yearId: '2023',
-        categoryId: 'tv',
+        type: 'image',
         title: 'Barbie Movie Night',
-        description: 'Saw the Barbie movie with friends!',
-        mediaUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400',
-        mediaType: 'image',
+        content: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400',
+        category: 'tv',
+        month: 'July',
+        tags: ['barbie', 'movies', 'friends'],
+        likes: 25,
+        comments: 7,
         createdAt: '2023-07-21',
-        isPublic: true
+        isPinned: true
       }
     ],
-    coverImage: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800'
+    coverImage: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800',
+    isFavorite: false
   }
 ];
 
-// Mock friends data
-const mockFriends = [
-  { id: 'friend-1', username: 'nostalgia_queen', displayName: 'Nostalgia Queen', avatarUrl: '', capsulesCount: 5 },
-  { id: 'friend-2', username: 'meme_lord', displayName: 'Meme Lord', avatarUrl: '', capsulesCount: 3 },
-  { id: 'friend-3', username: 'retro_fan', displayName: 'Retro Fan', avatarUrl: '', capsulesCount: 7 },
-];
-
-// Mock gallery items
-const mockGalleryItems = [
-  { id: 'gal-1', type: 'image' as const, title: 'Beach Day', preview: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=200', likes: 15, date: '2024-06-15' },
-  { id: 'gal-2', type: 'text' as const, title: 'Reflecting on 2024', preview: 'This year has been...', likes: 8, date: '2024-12-20' },
-  { id: 'gal-3', type: 'video' as const, title: 'Concert Night', preview: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=200', likes: 22, date: '2024-08-10' },
-];
-
 export default function MyCapsulePage() {
-  const [capsules, setCapsules] = useState<ExtendedCapsule[]>(mockCapsules);
-  const [selectedCapsule, setSelectedCapsule] = useState<ExtendedCapsule | null>(null);
-  const [viewingCapsule, setViewingCapsule] = useState<ExtendedCapsule | null>(null);
+  const [capsules, setCapsules] = useState<PersonalCapsule[]>(mockCapsules);
+  const [selectedCapsule, setSelectedCapsule] = useState<PersonalCapsule | null>(null);
   const [showSealModal, setShowSealModal] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'capsules' | 'gallery' | 'friends' | 'wrapped'>('capsules');
-  const [sealWarning, setSealWarning] = useState(false);
-  
-  // Form states
-  const [editForm, setEditForm] = useState({
-    title: '',
-    description: '',
-    coverImage: '',
-    visibility: 'public' as 'public' | 'friends' | 'private'
-  });
 
-  const [createForm, setCreateForm] = useState({
-    year: 2026,
-    title: '',
-    description: '',
-    visibility: 'public' as 'public' | 'friends' | 'private'
-  });
-
-  const [submissionForm, setSubmissionForm] = useState({
-    type: 'text' as 'image' | 'video' | 'text' | 'link',
-    title: '',
-    description: '',
-    mediaUrl: '',
-    categoryId: 'other',
-    month: MONTHS[new Date().getMonth()],
-    day: Math.min(new Date().getDate(), 28)
-  });
-
-  const [sealDate, setSealDate] = useState<string>('2027-01-01');
-
-  const getStatusBadge = (status: ExtendedCapsule['status']) => {
-    const styles: Record<string, string> = {
+  const getStatusBadge = (status: CapsuleStatus) => {
+    const styles = {
       open: 'bg-green-500',
       sealed: 'bg-red-500',
       unlocked: 'bg-blue-500'
     };
     return (
-      <Badge className={cn(styles[status], 'text-white font-medium')}>
+      <Badge className={cn(styles[status], 'text-white')}>
         {status === 'open' ? '🔓 Open' : status === 'sealed' ? '🔒 Sealed' : '✨ Unlocked'}
       </Badge>
     );
   };
 
-  const getVisibilityIcon = (visibility: string) => {
-    switch (visibility) {
-      case 'private':
-        return <Lock className="w-4 h-4" />;
-      case 'friends':
-        return <Users className="w-4 h-4" />;
-      default:
-        return <Globe className="w-4 h-4" />;
-    }
-  };
-
-  const getMediaIcon = (type: string | undefined) => {
-    switch (type) {
-      case 'image':
-        return '📷';
-      case 'video':
-        return '🎬';
-      default:
-        return '📝';
-    }
-  };
-
-  const handleOpenEditModal = (capsule: ExtendedCapsule) => {
-    setSelectedCapsule(capsule);
-    setEditForm({
-      title: capsule.title,
-      description: capsule.description || '',
-      coverImage: capsule.coverImage || '',
-      visibility: capsule.visibility
-    });
-    setShowEditModal(true);
-  };
-
-  const handleSaveEdit = () => {
-    if (!selectedCapsule) return;
-    
+  const handleSealCapsule = (capsuleId: string, unlockDate: string) => {
     setCapsules(prev => prev.map(c => 
       c.id === selectedCapsule.id 
         ? { 
             ...c, 
-            title: editForm.title,
-            description: editForm.description,
-            coverImage: editForm.coverImage,
-            visibility: editForm.visibility,
-            updatedAt: new Date().toISOString()
-          }
-        : c
-    ));
-    setShowEditModal(false);
-  };
-
-  const handleCreateCapsule = () => {
-    const newCapsule: ExtendedCapsule = {
-      id: `capsule-${Date.now()}`,
-      userId: 'user-1',
-      yearId: createForm.year.toString(),
-      year: createForm.year,
-      title: createForm.title || `My ${createForm.year} Time Capsule`,
-      description: createForm.description || 'Building my capsule...',
-      status: 'open',
-      visibility: createForm.visibility,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      submissions: []
-    };
-    setCapsules([newCapsule, ...capsules]);
-    setShowCreateModal(false);
-    setCreateForm({ year: CURRENT_YEAR, title: '', description: '', visibility: 'public' });
-  };
-
-  const handleSealCapsule = () => {
-    if (!selectedCapsule) return;
-    
-    if (!sealWarning) {
-      setSealWarning(true);
-      return;
-    }
-    
-    setCapsules(prev => prev.map(c => 
-      c.id === selectedCapsule.id 
-        ? { 
-            ...c, 
-            status: 'sealed' as const, 
+            status: 'sealed', 
             sealedAt: new Date().toISOString(),
-            unlockDate: sealDate
+            unlockDate 
           }
         : c
     ));
+    
+    // Update Firebase if logged in
+    if (user) {
+      try {
+        await updateDoc(doc(db, COLLECTIONS.CAPSULES, capsuleId), {
+          isSealed: true,
+          sealedUntil: unlockDate,
+          updatedAt: now
+        });
+      } catch (error) {
+        console.error('Error sealing capsule:', error);
+      }
+    }
+    
     setShowSealModal(false);
     setSealWarning(false);
   };
 
-  const handleAddSubmission = () => {
-    if (!selectedCapsule) return;
-    
-    // Build date string from month and day
-    const monthIndex = MONTHS.indexOf(submissionForm.month);
-    const dateStr = `${selectedCapsule.year}-${String(monthIndex + 1).padStart(2, '0')}-${String(submissionForm.day).padStart(2, '0')}`;
-    
-    const newSubmission: PersonalCapsuleEntry = {
+  const handleAddSubmission = (capsuleId: string, submission: Partial<CapsuleSubmission>) => {
+    const newSubmission: CapsuleSubmission = {
       id: `sub-${Date.now()}`,
+      capsuleId,
       userId: 'user-1',
-      yearId: selectedCapsule.yearId,
-      categoryId: submissionForm.categoryId,
-      title: submissionForm.title || `New ${submissionForm.type}`,
-      description: submissionForm.description,
-      mediaUrl: submissionForm.mediaUrl,
-      mediaType: submissionForm.type === 'link' ? 'text' : submissionForm.type as 'image' | 'video' | 'text',
-      createdAt: dateStr,
-      isPublic: true
+      type: submission.type || 'text',
+      title: submission.title || '',
+      content: submission.content || '',
+      category: submission.category || 'other',
+      month: submission.month,
+      tags: submission.tags || [],
+      likes: 0,
+      comments: 0,
+      createdAt: new Date().toISOString(),
+      isPinned: false
     };
     
+    // Update local state
     setCapsules(prev => prev.map(c => 
-      c.id === selectedCapsule.id 
-        ? { ...c, submissions: [...c.submissions, newSubmission], updatedAt: new Date().toISOString() }
+      c.id === capsuleId 
+        ? { ...c, submissions: [...c.submissions, newSubmission] }
         : c
     ));
+    
+    // Update Firebase if logged in
+    if (user) {
+      try {
+        const capsule = capsules.find(c => c.id === capsuleId);
+        if (capsule) {
+          await updateDoc(doc(db, COLLECTIONS.CAPSULES, capsuleId), {
+            entries: [...capsule.entries, newEntry],
+            updatedAt: new Date().toISOString()
+          });
+        }
+      } catch (error) {
+        console.error('Error adding submission:', error);
+      }
+    }
+    
     setShowSubmitModal(false);
     setSubmissionForm({
       type: 'text',
@@ -407,6 +244,165 @@ export default function MyCapsulePage() {
     }
     setViewingCapsule(capsule);
   };
+  
+  // Handle file selection
+  const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setSelectedFiles((prev) => [...prev, ...files]);
+    setUploadError(null);
+  };
+  
+  // Remove selected file
+  const removeFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+  
+  // Handle add entry (with or without files)
+  const handleAddEntry = async () => {
+    if (!user || !selectedCapsule) return;
+    
+    // Require at least title or files
+    if (!uploadTitle.trim() && selectedFiles.length === 0) {
+      setUploadError('Please add a title or upload at least one file');
+      return;
+    }
+    
+    setIsUploading(true);
+    setUploadError(null);
+    
+    try {
+      let newEntries: PersonalCapsuleEntry[] = [];
+      
+      if (selectedFiles.length > 0) {
+        // Upload files to Firebase Storage
+        const uploadResults = await uploadCapsuleMedia(
+          selectedFiles,
+          user.uid,
+          selectedCapsule.id,
+          (fileIndex, progress) => {
+            setUploadProgress((prev) => ({
+              ...prev,
+              [fileIndex]: progress,
+            }));
+          }
+        );
+        
+        // Create entries for each uploaded file
+        newEntries = uploadResults.map((result, index) => ({
+          id: `entry-${Date.now()}-${index}`,
+          userId: user.uid,
+          yearId: selectedCapsule.yearId,
+          categoryId: 'media',
+          title: uploadTitle || `Media ${index + 1}`,
+          description: uploadDescription || '',
+          mediaUrl: result.url,
+          mediaType: result.fileType as 'image' | 'video',
+          thumbnailUrl: result.fileType === 'video' ? result.url : undefined,
+          fileSize: result.fileSize,
+          contentType: result.contentType,
+          createdAt: new Date().toISOString(),
+          isPublic: true,
+        }));
+      } else {
+        // Create text-only entry
+        newEntries = [{
+          id: `entry-${Date.now()}`,
+          userId: user.uid,
+          yearId: selectedCapsule.yearId,
+          categoryId: 'text',
+          title: uploadTitle || 'Text Entry',
+          description: uploadDescription || '',
+          mediaType: 'text' as const,
+          createdAt: new Date().toISOString(),
+          isPublic: true,
+        }];
+      }
+      
+      // Update local state
+      setCapsules((prev) => prev.map((c) => 
+        c.id === selectedCapsule.id 
+          ? { ...c, entries: [...c.entries, ...newEntries], updatedAt: new Date().toISOString() }
+          : c
+      ));
+      
+      // Update Firebase
+      await updateDoc(doc(db, COLLECTIONS.CAPSULES, selectedCapsule.id), {
+        entries: [...selectedCapsule.entries, ...newEntries],
+        updatedAt: new Date().toISOString(),
+      });
+      
+      // Reset form and close modal
+      resetUploadForm();
+      setShowSubmitModal(false);
+    } catch (error: any) {
+      console.error('Error adding entry:', error);
+      setUploadError(error.message || 'Failed to add entry');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+  
+  // Reset upload form
+  const resetUploadForm = () => {
+    setUploadTitle('');
+    setUploadDescription('');
+    setSelectedFiles([]);
+    setUploadProgress({});
+    setUploadError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+  
+  // Open submit modal and reset form
+  const openSubmitModal = (capsule: CapsuleWithStringDates) => {
+    setSelectedCapsule(capsule);
+    resetUploadForm();
+    setShowSubmitModal(true);
+  };
+
+  const handleCreateCapsule = async () => {
+    const year = new Date().getFullYear();
+    const newCapsule: CapsuleWithStringDates = {
+      id: `capsule-${Date.now()}`,
+      userId: user?.uid || 'demo',
+      yearId: String(year),
+      title: `My ${year} Rewind`,
+      description: 'Start building your capsule!',
+      entries: [],
+      isSealed: false,
+      allowSubmissions: true,
+      isPublic: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    
+    // Update local state
+    setCapsules([newCapsule, ...capsules]);
+    
+    // Save to Firebase if logged in
+    if (user) {
+      try {
+        await setDoc(doc(db, COLLECTIONS.CAPSULES, newCapsule.id), newCapsule);
+      } catch (error) {
+        console.error('Error creating capsule:', error);
+      }
+    }
+  };
+
+  // Show loading state
+  if (authLoading || pageLoading) {
+    return (
+      <NostalgiaBackground>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-6xl mb-4 animate-pulse">📦</div>
+            <p className="text-xl text-retro-gray">Loading...</p>
+          </div>
+        </div>
+      </NostalgiaBackground>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-gray-900 to-black">
@@ -435,528 +431,202 @@ export default function MyCapsulePage() {
 
       <div className="relative z-10 min-h-screen py-12 px-4">
         <div className="max-w-7xl mx-auto">
-          {/* Back button when viewing capsule */}
-          {viewingCapsule && (
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="mb-6"
-            >
-              <Button
-                variant="ghost"
-                onClick={() => setViewingCapsule(null)}
-                className="text-white hover:bg-white/10"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Back to Capsules
-              </Button>
-            </motion.div>
-          )}
-
-          {/* Header - Hide when viewing capsule */}
-          {!viewingCapsule && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <div className="flex flex-col md:flex-row items-center justify-between mb-12">
-                <div className="text-center md:text-left mb-6 md:mb-0">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="text-6xl mb-4"
-                  >
-                    📦
-                  </motion.div>
-                  <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
-                    MyCapsule
-                  </h1>
-                  <p className="text-xl text-gray-300">
-                    Create and manage your personal time capsules
-                  </p>
-                </div>
-                
-                {/* User Profile Summary */}
-                <Card className="shrink-0 bg-white/10 border-white/20">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                      <img 
-                        src={mockUser.avatarUrl} 
-                        alt={mockUser.displayName}
-                        className="w-16 h-16 rounded-full bg-purple-500/30"
-                      />
-                      <div>
-                        <p className="font-bold text-white">{mockUser.displayName}</p>
-                        <p className="text-sm text-gray-300">@{mockUser.username}</p>
-                        <div className="flex gap-4 text-sm mt-1 text-gray-300">
-                          <span>📦 {capsules.length}</span>
-                          <span>👥 {mockUser.followers}</span>
-                        </div>
+          {/* Header */}
+          <AnimatedSection animation="fadeUp">
+            <div className="flex flex-col md:flex-row items-center justify-between mb-12">
+              <div className="text-center md:text-left mb-6 md:mb-0">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.5 }}
+                  className="text-6xl mb-4"
+                >
+                  📦
+                </motion.div>
+                <h1 className="text-4xl md:text-5xl font-bold text-retro-dark mb-2">
+                  MyCapsule
+                </h1>
+                <p className="text-xl text-retro-gray">
+                  Create and manage your personal rewinds
+                </p>
+              </div>
+              
+              {/* User Profile Summary */}
+              <Card className="shrink-0">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-4">
+                    <img 
+                      src={mockUser.avatarUrl} 
+                      alt={mockUser.displayName}
+                      className="w-16 h-16 rounded-full bg-retro-teal/20"
+                    />
+                    <div>
+                      <p className="font-bold text-retro-dark">{mockUser.displayName}</p>
+                      <p className="text-sm text-retro-gray">@{mockUser.username}</p>
+                      <div className="flex gap-2 text-sm mt-1">
+                        <span>📦 {mockUser.capsulesCount}</span>
+                        <span>👥 {mockUser.followers}</span>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Viewing Capsule Detail - MyBlueprint Style */}
-          {viewingCapsule && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="mb-8">
-                {/* Capsule Header */}
-                <div className="relative h-64 rounded-2xl overflow-hidden mb-6">
-                  {viewingCapsule.coverImage ? (
-                    <div 
-                      className="absolute inset-0 bg-cover bg-center"
-                      style={{ backgroundImage: `url(${viewingCapsule.coverImage})` }}
-                    />
-                  ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600" />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-6">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Badge className="bg-white/20 text-white border-0">{viewingCapsule.year}</Badge>
-                      {getStatusBadge(viewingCapsule.status)}
-                      <span className="text-gray-300 flex items-center gap-1">
-                        {getVisibilityIcon(viewingCapsule.visibility)}
-                      </span>
-                    </div>
-                    <h2 className="text-4xl font-bold text-white mb-2">{viewingCapsule.title}</h2>
-                    <p className="text-gray-300 max-w-2xl">{viewingCapsule.description}</p>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
+            </div>
+          </AnimatedSection>
 
-                {/* Actions Bar */}
-                <div className="flex flex-wrap gap-3 mb-6">
-                  {viewingCapsule.status === 'open' && (
-                    <>
-                      <Button 
-                        onClick={() => {
-                          setSelectedCapsule(viewingCapsule);
-                          setShowSubmitModal(true);
-                          const now = new Date();
-                          setSubmissionForm(prev => ({
-                            ...prev,
-                            month: MONTHS[now.getMonth()],
-                            day: Math.min(now.getDate(), 28)
-                          }));
-                        }}
-                        className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Memory
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedCapsule(viewingCapsule);
-                          setShowSealModal(true);
-                          setSealWarning(false);
-                        }}
-                        className="border-white/30 text-white hover:bg-white/10"
-                      >
-                        🔒 Seal Capsule
-                      </Button>
-                    </>
-                  )}
-                  <Button 
-                    variant="outline"
-                    onClick={() => handleOpenEditModal(viewingCapsule)}
-                    className="border-white/30 text-white hover:bg-white/10"
-                  >
-                    <Edit2 className="w-4 h-4 mr-2" />
-                    Edit
-                  </Button>
-                </div>
-
-                {/* Timeline / Entries Grid - MyBlueprint Style */}
-                {viewingCapsule.submissions.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {viewingCapsule.submissions
-                      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                      .map((submission, index) => (
-                        <motion.div
-                          key={submission.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                          className="bg-white/10 rounded-xl overflow-hidden hover:bg-white/20 transition-all"
-                        >
-                          {/* Media Preview */}
-                          {(submission.mediaType === 'image' || submission.mediaType === 'video') && submission.mediaUrl && (
-                            <div 
-                              className="h-48 bg-cover bg-center relative"
-                              style={{ backgroundImage: `url(${submission.mediaUrl})` }}
-                            >
-                              {submission.mediaType === 'video' && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                  <span className="text-6xl">🎬</span>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          {(!submission.mediaUrl || submission.mediaType === 'text') && (
-                            <div className="h-48 bg-gradient-to-br from-purple-600/50 to-pink-600/50 flex items-center justify-center">
-                              <span className="text-6xl">{getMediaIcon(submission.mediaType)}</span>
-                            </div>
-                          )}
-                          
-                          {/* Content */}
-                          <div className="p-4">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-sm text-gray-400">
-                                {new Date(submission.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                              </span>
-                              <Badge variant="outline" className="text-xs border-white/20 text-gray-300">
-                                {submission.categoryId}
-                              </Badge>
-                            </div>
-                            <h3 className="text-white font-semibold mb-1">{submission.title}</h3>
-                            <p className="text-gray-300 text-sm line-clamp-3">{submission.description}</p>
-                          </div>
-                        </motion.div>
-                      ))}
-                  </div>
-                ) : (
-                  <div className="bg-white/5 rounded-2xl p-12 text-center">
-                    <span className="text-6xl mb-4 block">📭</span>
-                    <h3 className="text-2xl font-bold text-white mb-2">No memories yet</h3>
-                    <p className="text-gray-400 mb-6">Start adding your memories to this capsule!</p>
-                    <Button 
-                      onClick={() => {
-                        setSelectedCapsule(viewingCapsule);
-                        setShowSubmitModal(true);
-                      }}
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add First Memory
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Main Content - Hide when viewing capsule */}
-          {!viewingCapsule && (
-            <>
-              {/* Tabs */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.1 }}
-              >
-                <div className="flex justify-center gap-2 mb-8 flex-wrap">
-                  {([
-                    { key: 'capsules', icon: '📦', label: 'Capsules' },
-                    { key: 'gallery', icon: '🖼️', label: 'Gallery' },
-                    { key: 'friends', icon: '👥', label: 'Friends' },
-                    { key: 'wrapped', icon: '✨', label: 'Wrapped' }
-                  ] as const).map((tab) => (
-                    <Button
-                      key={tab.key}
-                      variant={activeTab === tab.key ? 'default' : 'outline'}
-                      onClick={() => setActiveTab(tab.key)}
-                      className={cn(
-                        "capitalize px-6 py-3 text-lg transition-all",
-                        activeTab === tab.key 
-                          ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0" 
-                          : "border-white/30 text-white hover:bg-white/10"
-                      )}
-                    >
-                      <span className="mr-2">{tab.icon}</span>
-                      {tab.label}
-                    </Button>
-                  ))}
-                </div>
-              </motion.div>
-
-              {/* Capsules Tab Content */}
-              {activeTab === 'capsules' && (
-                <>
-                  {/* Create New Capsule Button */}
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                  >
-                    <div className="text-center mb-8">
-                      <Button 
-                        size="lg" 
-                        onClick={() => setShowCreateModal(true)}
-                        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-4 text-xl rounded-full shadow-lg hover:shadow-purple-500/25 transition-all"
-                      >
-                        <Plus className="w-6 h-6 mr-2" />
-                        Create New Capsule
-                      </Button>
-                    </div>
-                  </motion.div>
-
-                  {/* Capsules Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {capsules.map((capsule, index) => (
-                      <motion.div
-                        key={capsule.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                      >
-                        <motion.div
-                          whileHover={{ scale: 1.02 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <Card 
-                            className={cn(
-                              'h-full cursor-pointer transition-all duration-300 bg-white/10 border-white/20',
-                              selectedCapsule?.id === capsule.id && 'ring-2 ring-purple-500'
-                            )}
-                            onClick={() => handleCapsuleClick(capsule)}
-                          >
-                            {/* Cover Image or Gradient */}
-                            {capsule.coverImage ? (
-                              <div 
-                                className="h-40 bg-cover bg-center rounded-t-xl"
-                                style={{ backgroundImage: `url(${capsule.coverImage})` }}
-                              />
-                            ) : (
-                              <div className="h-40 bg-gradient-to-br from-purple-600 to-pink-600 rounded-t-xl flex items-center justify-center">
-                                <span className="text-6xl">📦</span>
-                              </div>
-                            )}
-                            
-                            <CardHeader className="pb-2">
-                              <div className="flex items-center justify-between">
-                                <Badge variant="outline" className="border-white/30 text-white">
-                                  {capsule.year}
-                                </Badge>
-                                <div className="flex items-center gap-2">
-                                  {getStatusBadge(capsule.status)}
-                                  <span className="text-gray-400" title={capsule.visibility}>
-                                    {getVisibilityIcon(capsule.visibility)}
-                                  </span>
-                                </div>
-                              </div>
-                              <CardTitle className="text-xl text-white">{capsule.title}</CardTitle>
-                            </CardHeader>
-                            
-                            <CardContent>
-                              {/* Empty State Message */}
-                              {capsule.submissions.length === 0 ? (
-                                <div className="bg-purple-500/20 rounded-lg p-4 text-center mb-4">
-                                  <p className="text-purple-200 font-medium">
-                                    Nothing vaulted yet.
-                                  </p>
-                                  <p className="text-purple-300 text-sm">
-                                    Add your memories of {capsule.year}!
-                                  </p>
-                                </div>
-                              ) : (
-                                <p className="text-gray-300 text-sm mb-4 line-clamp-2">
-                                  {capsule.description}
-                                </p>
-                              )}
-                              
-                              {/* Submissions Preview */}
-                              {capsule.submissions.length > 0 && (
-                                <div className="flex gap-2 mb-4">
-                                  {capsule.submissions.slice(0, 3).map((sub) => (
-                                    <div 
-                                      key={sub.id}
-                                      className="w-10 h-10 rounded-full bg-purple-500/30 flex items-center justify-center text-lg"
-                                    >
-                                      {getMediaIcon(sub.mediaType)}
-                                    </div>
-                                  ))}
-                                  {capsule.submissions.length > 3 && (
-                                    <div className="w-10 h-10 rounded-full bg-pink-500/30 flex items-center justify-center text-sm font-bold text-white">
-                                      +{capsule.submissions.length - 3}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* Actions */}
-                              <div className="flex gap-2 flex-wrap">
-                                {capsule.status === 'open' && (
-                                  <>
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedCapsule(capsule);
-                                        const now = new Date();
-                                        setSubmissionForm(prev => ({
-                                          ...prev,
-                                          month: MONTHS[now.getMonth()],
-                                          day: Math.min(now.getDate(), 28)
-                                        }));
-                                        setShowSubmitModal(true);
-                                      }}
-                                      className="border-white/30 text-white hover:bg-white/10 flex-1 min-w-[80px]"
-                                    >
-                                      <Plus className="w-4 h-4 mr-1" />
-                                      Add
-                                    </Button>
-                                    <Button 
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedCapsule(capsule);
-                                        setShowSealModal(true);
-                                        setSealWarning(false);
-                                      }}
-                                      className="bg-red-500 hover:bg-red-600 text-white flex-1 min-w-[80px]"
-                                    >
-                                      🔒 Seal
-                                    </Button>
-                                  </>
-                                )}
-                                {capsule.status === 'sealed' && capsule.shareCode && (
-                                  <Button size="sm" variant="outline" className="border-white/30 text-white hover:bg-white/10 flex-1">
-                                    🔗 Share
-                                  </Button>
-                                )}
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenEditModal(capsule);
-                                  }}
-                                  className="border-white/30 text-white hover:bg-white/10"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (confirm('Are you sure you want to delete this capsule?')) {
-                                      handleDeleteCapsule(capsule.id);
-                                    }
-                                  }}
-                                  className="border-white/30 text-red-300 hover:bg-red-500/20"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-
-                              {/* Seal Info */}
-                              {capsule.status === 'sealed' && capsule.unlockDate && (
-                                <div className="mt-3 p-3 bg-red-500/20 rounded-lg text-center border border-red-500/30">
-                                  <p className="text-xs text-red-300">Unlocks on</p>
-                                  <p className="font-bold text-white">
-                                    {new Date(capsule.unlockDate).toLocaleDateString()}
-                                  </p>
-                                </div>
-                              )}
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {/* Gallery Tab Content */}
-              {activeTab === 'gallery' && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
+          {/* Tabs */}
+          <AnimatedSection animation="fadeUp" delay={0.1}>
+            <div className="flex justify-center gap-2 mb-8">
+              {(['capsules', 'gallery', 'friends', 'wrapped'] as const).map((tab) => (
+                <Button
+                  key={tab}
+                  variant={activeTab === tab ? 'default' : 'outline'}
+                  onClick={() => setActiveTab(tab)}
+                  className="capitalize"
                 >
-                  <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-white mb-4">📸 Your Gallery</h2>
-                    <p className="text-gray-300">All your captured memories in one place</p>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {mockGalleryItems.map((item, index) => (
-                      <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="bg-white/10 rounded-xl overflow-hidden cursor-pointer hover:scale-105 transition-transform"
-                      >
-                        {item.type === 'image' ? (
+                  {tab === 'capsules' && '📦'} {tab === 'gallery' && '🖼️'} {tab === 'friends' && '👥'} {tab === 'wrapped' && '✨'}
+                  {' '}{tab}
+                </Button>
+              ))}
+            </div>
+          </AnimatedSection>
+
+          {/* Create New Capsule Button */}
+          <AnimatedSection animation="fadeUp" delay={0.2}>
+            <div className="text-center mb-8">
+              <Button 
+                size="lg" 
+                onClick={() => {
+                  const newCapsule: PersonalCapsule = {
+                    id: `capsule-${Date.now()}`,
+                    userId: 'user-1',
+                    year: new Date().getFullYear(),
+                    title: `My ${new Date().getFullYear()} Rewind`,
+                    description: 'Start building your capsule!',
+                    status: 'open',
+                    visibility: 'public',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    submissions: [],
+                    isFavorite: false
+                  };
+                  setCapsules([newCapsule, ...capsules]);
+                }}
+              >
+                ➕ Create New Capsule
+              </Button>
+            </div>
+          </AnimatedSection>
+
+          {/* Capsules Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {capsules.map((capsule, index) => (
+              <AnimatedSection key={capsule.id} animation="fadeUp" delay={index * 0.1}>
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Card 
+                    className={cn(
+                      'h-full cursor-pointer transition-all duration-300',
+                      selectedCapsule?.id === capsule.id && 'ring-2 ring-retro-teal'
+                    )}
+                    onClick={() => setSelectedCapsule(capsule)}
+                  >
+                    {capsule.coverImage && (
+                      <div 
+                        className="h-40 bg-cover bg-center rounded-t-xl"
+                        style={{ backgroundImage: `url(${capsule.coverImage})` }}
+                      />
+                    )}
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline">{capsule.year}</Badge>
+                        {getStatusBadge(capsule.status)}
+                      </div>
+                      <CardTitle className="text-xl">{capsule.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-retro-gray text-sm mb-4 line-clamp-2">
+                        {capsule.description}
+                      </p>
+                      
+                      {/* Submissions Preview */}
+                      <div className="flex gap-2 mb-4">
+                        {capsule.submissions.slice(0, 3).map((sub, i) => (
                           <div 
-                            className="h-40 bg-cover bg-center"
-                            style={{ backgroundImage: `url(${item.preview})` }}
-                          />
-                        ) : (
-                          <div className="h-40 bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center p-4">
-                            <p className="text-white text-center line-clamp-4">{item.preview}</p>
+                            key={sub.id}
+                            className="w-10 h-10 rounded-full bg-retro-teal/20 flex items-center justify-center text-lg"
+                          >
+                            {sub.type === 'image' && '📷'}
+                            {sub.type === 'video' && '🎬'}
+                            {sub.type === 'text' && '📝'}
+                            {sub.type === 'audio' && '🎵'}
+                          </div>
+                        ))}
+                        {capsule.submissions.length > 3 && (
+                          <div className="w-10 h-10 rounded-full bg-retro-purple/20 flex items-center justify-center text-sm font-bold">
+                            +{capsule.submissions.length - 3}
                           </div>
                         )}
-                        <div className="p-3">
-                          <h3 className="text-white font-medium truncate">{item.title}</h3>
-                          <div className="flex justify-between items-center mt-2 text-sm text-gray-400">
-                            <span>❤️ {item.likes}</span>
-                            <span>{item.date}</span>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
+                      </div>
 
-              {/* Friends Tab Content */}
-              {activeTab === 'friends' && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-white mb-4">👥 Friend Activity</h2>
-                    <p className="text-gray-300">See what your friends are capsule-ing</p>
-                  </div>
-                  
-                  <div className="max-w-2xl mx-auto space-y-4">
-                    {mockFriends.map((friend, index) => (
-                      <motion.div
-                        key={friend.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="bg-white/10 rounded-xl p-4 flex items-center gap-4 hover:bg-white/20 transition-all cursor-pointer"
-                      >
-                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-2xl">
-                          {friend.avatarUrl ? (
-                            <img src={friend.avatarUrl} alt={friend.displayName} className="w-full h-full rounded-full" />
-                          ) : (
-                            '👤'
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="text-white font-medium">{friend.displayName}</h3>
-                          <p className="text-gray-400 text-sm">@{friend.username}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-purple-300 font-medium">{friend.capsulesCount} capsules</p>
-                          <Button size="sm" className="mt-2 bg-purple-500 hover:bg-purple-600 text-white">
-                            View
+                      {/* Actions */}
+                      <div className="flex gap-2">
+                        {capsule.status === 'open' && (
+                          <>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCapsule(capsule);
+                                setShowSubmitModal(true);
+                              }}
+                              className="flex-1"
+                            >
+                              ➕ Add
+                            </Button>
+                            <Button 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCapsule(capsule);
+                                setShowSealModal(true);
+                              }}
+                              className="flex-1"
+                            >
+                              🔒 Seal
+                            </Button>
+                          </>
+                        )}
+                        {capsule.status === 'sealed' && capsule.shareCode && (
+                          <Button size="sm" variant="outline" className="flex-1">
+                            🔗 Share
                           </Button>
+                        )}
+                        {capsule.status === 'open' && capsule.visibility === 'public' && (
+                          <Button size="sm" variant="outline" className="flex-1">
+                            👥 Public
+                          </Button>
+                        )}
+                      </div>
+
+                      {/* Seal Info */}
+                      {capsule.status === 'sealed' && capsule.unlockDate && (
+                        <div className="mt-3 p-2 bg-red-50 rounded-lg text-center">
+                          <p className="text-xs text-retro-gray">Unlocks</p>
+                          <p className="font-bold text-red-600">
+                            {new Date(capsule.unlockDate).toLocaleDateString()}
+                          </p>
                         </div>
-                      </motion.div>
-                    ))}
-                  </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </motion.div>
-              )}
+              </AnimatedSection>
+            ))}
+          </div>
 
               {/* Wrapped Tab Content */}
               {activeTab === 'wrapped' && (
@@ -1242,172 +912,68 @@ export default function MyCapsulePage() {
             )}
           </AnimatePresence>
 
-          {/* Submit Modal */}
+          {/* Submit Modal with File Upload */}
           <AnimatePresence>
             {showSubmitModal && selectedCapsule && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+                className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
                 onClick={() => setShowSubmitModal(false)}
               >
                 <motion.div
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.9, opacity: 0 }}
-                  className="bg-gray-900 rounded-2xl p-6 max-w-md w-full border border-white/20"
+                  className="bg-white rounded-2xl p-6 max-w-md w-full"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-white">➕ Add to Your Capsule</h2>
-                    <Button variant="ghost" onClick={() => setShowSubmitModal(false)} className="text-gray-400 hover:text-white">
-                      <X className="w-6 h-6" />
-                    </Button>
-                  </div>
+                  <h2 className="text-2xl font-bold text-retro-dark mb-4">
+                    ➕ Add to Your Capsule
+                  </h2>
                   
                   <div className="space-y-4">
-                    {/* Post Type Selection */}
                     <div>
-                      <label className="block text-sm font-medium mb-2 text-gray-300">Post Type</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {([
-                          { type: 'text', icon: '📝', label: 'Text/Status' },
-                          { type: 'link', icon: '🔗', label: 'Link/Tweet' },
-                          { type: 'image', icon: '📷', label: 'Photo' },
-                          { type: 'video', icon: '🎬', label: 'Video' }
-                        ] as const).map((postType) => (
+                      <label className="block text-sm font-medium mb-2">Type</label>
+                      <div className="flex gap-2 flex-wrap">
+                        {(['image', 'video', 'text', 'audio'] as const).map((type) => (
                           <Button
-                            key={postType.type}
-                            variant={submissionForm.type === postType.type ? 'default' : 'outline'}
-                            onClick={() => setSubmissionForm(prev => ({ ...prev, type: postType.type }))}
-                            className={submissionForm.type === postType.type 
-                              ? 'bg-purple-500 text-white' 
-                              : 'border-white/30 text-white hover:bg-white/10'}
+                            key={type}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              handleAddSubmission(selectedCapsule.id, {
+                                type,
+                                title: `New ${type}`,
+                                content: type === 'image' ? 'https://example.com/image.jpg' : 'Sample content',
+                                category: 'other',
+                                month: 'December'
+                              });
+                            }}
                           >
-                            <span className="mr-1">{postType.icon}</span>
-                            {postType.label}
+                            {type === 'image' && '📷'}
+                            {type === 'video' && '🎬'}
+                            {type === 'text' && '📝'}
+                            {type === 'audio' && '🎵'}
+                            {' '}{type.charAt(0).toUpperCase() + type.slice(1)}
                           </Button>
                         ))}
                       </div>
                     </div>
-                    
-                    {/* Date Selection */}
-                    <div className="flex gap-3">
-                      <div className="flex-1">
-                        <label className="block text-sm font-medium mb-2 text-gray-300">Month</label>
-                        <select 
-                          className="w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white"
-                          value={submissionForm.month}
-                          onChange={(e) => {
-                            const newMonth = e.target.value;
-                            const maxDays = getDaysInMonth(newMonth, selectedCapsule.year);
-                            setSubmissionForm(prev => ({ 
-                              ...prev, 
-                              month: newMonth,
-                              day: Math.min(prev.day, maxDays)
-                            }));
-                          }}
-                        >
-                          {MONTHS.map(m => (
-                            <option key={m} value={m} className="bg-gray-900">{m}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="w-24">
-                        <label className="block text-sm font-medium mb-2 text-gray-300">Day</label>
-                        <select 
-                          className="w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white"
-                          value={submissionForm.day}
-                          onChange={(e) => setSubmissionForm(prev => ({ ...prev, day: parseInt(e.target.value) }))}
-                        >
-                          {Array.from({ length: getDaysInMonth(submissionForm.month, selectedCapsule.year) }, (_, i) => i + 1).map(day => (
-                            <option key={day} value={day} className="bg-gray-900">{day}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium mb-2 text-gray-300">Title</label>
-                      <input 
-                        type="text"
-                        className="w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white"
-                        placeholder="Give your memory a title..."
-                        value={submissionForm.title}
-                        onChange={(e) => setSubmissionForm(prev => ({ ...prev, title: e.target.value }))}
-                      />
-                    </div>
-                    
-                    {/* URL/Link Field */}
-                    {(submissionForm.type === 'link' || submissionForm.type === 'image' || submissionForm.type === 'video') && (
-                      <div>
-                        <label className="block text-sm font-medium mb-2 text-gray-300">
-                          {submissionForm.type === 'link' ? 'Link URL' : 'Media URL'}
-                        </label>
-                        <input 
-                          type="text"
-                          className="w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-500"
-                          placeholder="https://example.com/..."
-                          value={submissionForm.mediaUrl}
-                          onChange={(e) => setSubmissionForm(prev => ({ ...prev, mediaUrl: e.target.value }))}
-                        />
-                        {/* URL Preview */}
-                        {submissionForm.mediaUrl && (
-                          <div className="mt-2 rounded-lg overflow-hidden h-32 bg-white/5">
-                            <div 
-                              className="h-full bg-cover bg-center"
-                              style={{ backgroundImage: `url(${submissionForm.mediaUrl})` }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    
-                    {/* Text Content */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2 text-gray-300">
-                        {submissionForm.type === 'text' ? 'Write your post...' : 'Description'}
-                      </label>
-                      <textarea 
-                        className="w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white resize-none"
-                        placeholder={submissionForm.type === 'text' ? "What's on your mind?" : "Add a description..."}
-                        rows={4}
-                        value={submissionForm.description}
-                        onChange={(e) => setSubmissionForm(prev => ({ ...prev, description: e.target.value }))}
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium mb-2 text-gray-300">Category</label>
-                      <select 
-                        className="w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white"
-                        value={submissionForm.categoryId}
-                        onChange={(e) => setSubmissionForm(prev => ({ ...prev, categoryId: e.target.value }))}
-                      >
-                        {categories.map(cat => (
-                          <option key={cat.id} value={cat.id} className="bg-gray-900">
-                            {cat.icon} {cat.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+
+                    <p className="text-sm text-retro-gray">
+                      Quick add demo: Click any type above to add a sample submission to your capsule!
+                    </p>
                   </div>
-                  
-                  <div className="flex gap-2 mt-6">
+
+                  <div className="mt-4">
                     <Button 
                       variant="outline" 
                       onClick={() => setShowSubmitModal(false)}
-                      className="flex-1 border-white/30 text-white hover:bg-white/10"
+                      className="w-full"
                     >
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handleAddSubmission}
-                      className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Add
+                      Close
                     </Button>
                   </div>
                 </motion.div>
