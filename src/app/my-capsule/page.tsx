@@ -129,6 +129,9 @@ export default function MyCapsulePage() {
   const [activeTab, setActiveTab] = useState<'capsules' | 'gallery' | 'friends' | 'wrapped'>('capsules');
   const [pageLoading, setPageLoading] = useState(true);
   
+  // Toast notification state for sealed capsule warning
+  const [sealedCapsuleToast, setSealedCapsuleToast] = useState<{unlockDate: string} | null>(null);
+  
   // Image upload state
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -636,6 +639,35 @@ export default function MyCapsulePage() {
             </div>
           </AnimatedSection>
 
+          {/* Sealed Capsule Toast Notification */}
+          <AnimatePresence>
+            {sealedCapsuleToast && (
+              <motion.div
+                initial={{ opacity: 0, y: -50, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -50, scale: 0.9 }}
+                className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50"
+              >
+                <div className="bg-red-500/90 backdrop-blur-sm text-white px-6 py-4 rounded-xl shadow-2xl border border-red-400/50 flex items-center gap-3 max-w-md">
+                  <Lock className="w-6 h-6 flex-shrink-0" />
+                  <div>
+                    <p className="font-bold text-sm">🔒 Capsule Sealed</p>
+                    <p className="text-xs text-red-100">
+                      This capsule cannot be viewed until<br />
+                      <span className="font-semibold">{new Date(sealedCapsuleToast.unlockDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSealedCapsuleToast(null)}
+                    className="ml-2 text-red-100 hover:text-white transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Tabs */}
           <AnimatedSection animation="fadeUp" delay={0.1}>
             <div className="flex justify-center gap-2 mb-8">
@@ -677,9 +709,14 @@ export default function MyCapsulePage() {
                     <Card 
                       className={cn(
                         "cursor-pointer transition-all duration-300 bg-black/50 border-white/20 hover:border-retro-teal/50",
-                        selectedCapsule?.id === capsule.id && "border-retro-teal"
+                        selectedCapsule?.id === capsule.id && "border-retro-teal",
+                        capsule.status === 'sealed' && "opacity-60 cursor-not-allowed"
                       )}
                       onClick={() => {
+                        if (capsule.status === 'sealed') {
+                          setSealedCapsuleToast({ unlockDate: capsule.unlockDate! });
+                          return;
+                        }
                         setSelectedCapsule(capsule);
                         setShowViewModal(true);
                       }}
@@ -694,6 +731,11 @@ export default function MyCapsulePage() {
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-retro-purple to-retro-blue flex items-center justify-center">
                             <span className="text-6xl">📦</span>
+                          </div>
+                        )}
+                        {capsule.status === 'sealed' && (
+                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                            <Lock className="w-12 h-12 text-red-400" />
                           </div>
                         )}
                         <div className="absolute top-2 right-2">
