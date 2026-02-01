@@ -24,10 +24,15 @@ Environment Variables
 Create a .env.local file and add:
 
 NEXT_PUBLIC_FIREBASE_API_KEY=your_key
+
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_domain
+
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_bucket
+
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 
 Run Locally
@@ -120,3 +125,4 @@ Planned and potential enhancements include:
 💎 Premium nostalgia packs and curated collections
 
 Rewind aims to become a living archive of digital culture — built by the community, for the community.
+
