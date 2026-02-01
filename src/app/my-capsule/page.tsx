@@ -125,6 +125,7 @@ export default function MyCapsulePage() {
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'capsules' | 'gallery' | 'friends' | 'wrapped'>('capsules');
   const [pageLoading, setPageLoading] = useState(true);
   
@@ -678,7 +679,10 @@ export default function MyCapsulePage() {
                         "cursor-pointer transition-all duration-300 bg-black/50 border-white/20 hover:border-retro-teal/50",
                         selectedCapsule?.id === capsule.id && "border-retro-teal"
                       )}
-                      onClick={() => setSelectedCapsule(capsule)}
+                      onClick={() => {
+                        setSelectedCapsule(capsule);
+                        setShowViewModal(true);
+                      }}
                     >
                       <div className="aspect-video relative overflow-hidden rounded-t-lg">
                         {capsule.coverImage ? (
@@ -838,6 +842,127 @@ export default function MyCapsulePage() {
             <AnimatedSection animation="fadeUp">
               <PersonalizedWrapped />
             </AnimatedSection>
+          )}
+
+          {/* View Capsule Modal */}
+          {showViewModal && selectedCapsule && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+              onClick={() => setShowViewModal(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-gray-900 rounded-2xl p-6 max-w-4xl w-full border border-white/20 shadow-xl max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="flex justify-between items-start mb-6">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      {getStatusBadge(selectedCapsule.status)}
+                      {selectedCapsule.isFavorite && <span className="text-xl">⭐</span>}
+                    </div>
+                    <h2 className="text-3xl font-bold text-white">{selectedCapsule.title}</h2>
+                    <p className="text-gray-400 mt-1">{selectedCapsule.description}</p>
+                    <p className="text-gray-500 text-sm mt-1">📅 {selectedCapsule.year} • 👥 {selectedCapsule.visibility}</p>
+                  </div>
+                  <Button variant="ghost" onClick={() => setShowViewModal(false)} className="text-gray-400 hover:text-white">
+                    <X className="w-6 h-6" />
+                  </Button>
+                </div>
+                
+                {/* Cover Image */}
+                {selectedCapsule.coverImage && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-6 rounded-xl overflow-hidden"
+                  >
+                    <img src={selectedCapsule.coverImage} alt={selectedCapsule.title} className="w-full h-64 object-cover" />
+                  </motion.div>
+                )}
+                
+                {/* Submissions Section */}
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold text-white">📦 Contents ({selectedCapsule.submissions.length})</h3>
+                    {selectedCapsule.status === 'open' && (
+                      <Button size="sm" onClick={() => { setSubmissionForm(prev => ({ ...prev, month: MONTHS[new Date().getMonth()] })); setShowSubmitModal(true); }} className="bg-retro-teal hover:bg-retro-teal/80 text-white">
+                        ➕ Add Content
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {selectedCapsule.submissions.length === 0 && (
+                    <div className="text-center py-12 bg-black/30 rounded-xl">
+                      <span className="text-6xl mb-4 block">📭</span>
+                      <p className="text-gray-400 text-lg">This capsule is empty</p>
+                      <p className="text-gray-500 text-sm mt-2">Add your first memory to this capsule!</p>
+                    </div>
+                  )}
+                  
+                  {selectedCapsule.submissions.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {selectedCapsule.submissions.map((submission, index) => (
+                        <motion.div
+                          key={submission.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.1 * (index + 1) }}
+                          className="bg-black/30 rounded-xl overflow-hidden"
+                        >
+                          {submission.type === 'image' && submission.content && (
+                            <div className="aspect-video">
+                              <img src={submission.content} alt={submission.title} className="w-full h-full object-cover" />
+                            </div>
+                          )}
+                          {submission.type === 'video' && submission.content && (
+                            <div className="aspect-video bg-black/50 flex items-center justify-center">
+                              <video src={submission.content} className="w-full h-full object-contain" controls />
+                            </div>
+                          )}
+                          {(!submission.content || (submission.type !== 'image' && submission.type !== 'video')) && (
+                            <div className="aspect-video bg-gradient-to-br from-retro-purple to-retro-blue flex items-center justify-center p-4">
+                              <span className="text-4xl">
+                                {submission.type === 'text' && '📝'}
+                                {submission.type === 'image' && '🖼️'}
+                                {submission.type === 'video' && '🎬'}
+                              </span>
+                            </div>
+                          )}
+                          <div className="p-4">
+                            <h4 className="font-bold text-white">{submission.title}</h4>
+                            <div className="flex items-center gap-2 text-sm text-gray-400 mt-2">
+                              <span>{submission.month}</span>
+                              <span>•</span>
+                              <span className="capitalize">{submission.category}</span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+                
+                {/* Seal Info */}
+                {selectedCapsule.status === 'sealed' && selectedCapsule.unlockDate && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="mt-6 p-4 bg-red-500/20 rounded-xl border border-red-500/30"
+                  >
+                    <p className="text-red-300 font-medium text-center">
+                      🔒 This capsule is sealed until {new Date(selectedCapsule.unlockDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  </motion.div>
+                )}
+              </motion.div>
+            </motion.div>
           )}
 
           {/* Create Capsule Modal */}
