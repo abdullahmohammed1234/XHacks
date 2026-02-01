@@ -121,7 +121,7 @@ export default function Home() {
                 Explore Capsules 📅
               </Button>
             </Link>
-            <Link href="/mycapsule">
+            <Link href="/my-capsule">
               <Button variant="outline" size="lg" className="text-lg px-8 border-[#C44FFF] text-[#C44FFF] hover:bg-[#C44FFF]/10">
                 My Capsule ✨
               </Button>
